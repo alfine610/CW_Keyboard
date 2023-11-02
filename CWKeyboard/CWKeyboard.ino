@@ -33,14 +33,17 @@ static volatile bool nextFlg = false;
 static volatile int cwCnt = 0;
 
 //output port
-#define kLedPin (5)
+#define kLedPin (15)
+#define kPWMPin (12)
+#define kPWMCh (1)
+#define kPWMFreq (700)
 static volatile int ledState = HIGH;
 
 //paddle input pin
 #define kShortPin (27)
 #define kLongPin (26)
 //cw short signal time[us]
-#define kCWMinTimeCount (70000)
+#define kCWMinTimeCount (50000)
 
 //CW character branch
 static volatile pCWBranch cwChara = pcw_Root;
@@ -69,11 +72,15 @@ void setup() {
   pinMode(kShortPin, INPUT_PULLUP);
   pinMode(kLongPin, INPUT_PULLUP);
 
+  pinMode(kPWMPin, OUTPUT);
+  ledcSetup(kPWMCh, kPWMFreq, 16);
+
   //timer setup
   //clock:80MHz, (_,80,_) -> 1us
   tm = timerBegin(0, 80, true);
   timerAttachInterrupt(tm, &interruptFunc, true);
   timerAlarmWrite(tm, kCWMinTimeCount, true);
+
 
   //BTKeyboard setup
   bleKeyboard.begin();
@@ -122,11 +129,14 @@ void loop() {
 //cw output on
 void cwOn() {
   digitalWrite(kLedPin, LOW);
+  ledcAttachPin(kPWMPin, kPWMCh);
+  ledcWriteTone(kPWMCh, kPWMFreq);
 }
 
 //cw output off
 void cwOff() {
   digitalWrite(kLedPin, HIGH);
+  ledcDetachPin(kPWMPin);
 }
 
 //cw timer on
